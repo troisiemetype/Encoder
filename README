@@ -1,0 +1,11 @@
+This library is intended to drive a rotary encoder.
+
+For now, it's based on polling the pins as often as possible. Further developpment may lead to interrupt based polling.
+
+Simply import it in your Arduino Sketch, call begin() in the setup by passing the two pins the encoder is plugged on, and call update on each loop.
+
+getStep() returns 1 or -1 each time the encoder is incremented. Sign gives the direction.
+reverse() change the sign of the value getStep() returns. 
+setDebounceDelay() change the delay used for debounce. if not called, it will default at 1 millisecond.
+
+Your free to use this library for wathever project your working on.
