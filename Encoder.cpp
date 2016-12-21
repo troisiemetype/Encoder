@@ -36,6 +36,8 @@ Encoder::Encoder(){
 
 	_time[0] = _time[1] = millis();
 
+	_function = NULL;
+
 }
 
 //Define the two pins used to connect the encoder
@@ -95,16 +97,35 @@ bool Encoder::update(){
 }
 
 //Get a reading after polling. Set back to zero once read.
+//exec() uses this function, so be carreful: calling exec() after having calling this
+//Will result in the function called with 0 as paramater.
 char Encoder::getStep(){
 	char state = _step;
 	_step = 0;
 	return state;
-
 }
 
 //Set the reverse reading. Invert the value returned for a click in one direction.
 void Encoder::reverse(){
 	_invert = !_invert;
+}
+
+//Attach an external function to the encoder.
+//The function should have a char as parameter, so the encoder will send it's value.
+void Encoder::attach(void *function(char)){
+	_function = function;
+}
+
+//Remove the function previously attached.
+void Encoder::detach(){
+	_function = NULL;
+}
+
+//Execute the function attached to the encoder, by passing it the last step read (-1, 0 or 1).
+//Beware: this function uses getStep(), so don't call getStep() before to call exec(), or it will send 0!
+void Encoder::exec(){
+	if(_function == NULL) return;
+	_function(getStep());
 }
 
 //Debounce the reading. Protected function, cannot be called by user.
@@ -127,5 +148,5 @@ void Encoder::_debounce(int pin){
 		_pState[1] = _state[1];
 		_state[pin] = _now[pin];
 	}
-
 }
+

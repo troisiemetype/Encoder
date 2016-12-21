@@ -37,9 +37,16 @@ public:
 
 	void reverse();
 
+	void attach(void *function(char));
+	void detach();
+
+	void exec();
+
 protected:
 
 	void _debounce(int pin);
+
+	void (*_function)(char);
 
 	bool _invert;
 
