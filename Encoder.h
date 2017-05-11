@@ -25,10 +25,17 @@ class Encoder{
 
 public:
 
+	enum coderType_t{
+		SINGLE_STEP = 0,
+		DOUBLE_STEP,
+		QUAD_STEP,
+	};
+
 	Encoder();
 
-	void begin(int pin1, int pin2);
+	void begin(int pin1, int pin2, coderType_t = SINGLE_STEP);
 
+	void setCoderType(coderType_t type);
 	void setDebounceDelay(int delay);
 
 	bool update();
@@ -44,11 +51,12 @@ public:
 
 protected:
 
-	void _debounce(int pin);
+	bool _debounce(int pin);
 
 	void (*_function)(char);
 
 	bool _invert;
+	coderType_t _type;
 
 	int _pin[2];
 
@@ -62,14 +70,10 @@ protected:
 
 	bool _direction;
 	bool _change;
+	bool _quadChange;
 	char _step;
 
 	int _debounceDelay;
-
-
-
-
-
 
 };
 

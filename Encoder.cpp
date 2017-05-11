@@ -41,12 +41,19 @@ Encoder::Encoder(){
 }
 
 //Define the two pins used to connect the encoder
-void Encoder::begin(int pin1, int pin2){
+void Encoder::begin(int pin1, int pin2, Encoder::coderType_t type){
 	_pin[0] = pin1;
 	_pin[1] = pin2;
 
 	pinMode(_pin[0], INPUT_PULLUP);
 	pinMode(_pin[1], INPUT_PULLUP);
+
+	setCoderType(type);
+}
+
+//Set the coder type
+void Encoder::setCoderType(Encoder::coderType_t type){
+	_type = type;
 }
 
 //Set the debounce delay
@@ -57,39 +64,71 @@ void Encoder::setDebounceDelay(int delay){
 //Update the reading of digital pins. Has to be called as often as possible.
 //Returns true if a step has happened.
 bool Encoder::update(){
-	_debounce(0);
-	_debounce(1);
 
-	//If the states of the two pins are different, we have a change
-	if((_state[0] != _state[1]) && !_change){
-		_change = true;
-		_direction = _invert ^ (_pState[0] == _state[0]);
-/*
-		Serial.print("Change: ");
-		Serial.print(_state[0]);
-		Serial.print("   |   ");
-		Serial.print(_state[1]);
-		Serial.println();
-*/
-		return false;
-	}
+	//Decode steps according to encoder type:
+	//SINGLE_STEP is an encoder where each click is a single pin change
+	//DOUBLE_STEP is an encoder where each click is on the same state,
+	//and a step is a change on both pin, one direction or other
+	//QUAD_STEP is an encoder where each click is two DOUBLE_STEP.
+	if(_type == SINGLE_STEP){
+		if(_debounce(0)){
+			if(_state[0] ^_state[1]){
+				_step = 1;
+			} else {
+				_step = -1;
+			}
+			return true;
 
-	//If the states of the two pins are the same, we may have a click.
-	if((_state[0] == _state[1]) && _change){
-		_change = false;
-		if(_direction){
-			_step = 1;			
-		} else {
-			_step = -1;
+		} else if(_debounce(1)){
+			if(_state[0] ^_state[1]){
+				_step = -1;
+			} else {
+				_step = 1;
+			}
+			return true;
 		}
-/*
-		Serial.print("Click:  ");
-		Serial.print(_state[0]);
-		Serial.print("   |   ");
-		Serial.print(_state[1]);
-		Serial.println();
-*/
-		return true;
+
+		return false;
+
+	} else {
+		_debounce(0);
+		_debounce(1);
+		//If the states of the two pins are different, we have a change
+		if((_state[0] != _state[1]) && !_change){
+			_change = true;
+			_direction = _invert ^ (_pState[0] == _state[0]);
+	/*
+			Serial.print("Change: ");
+			Serial.print(_state[0]);
+			Serial.print("   |   ");
+			Serial.print(_state[1]);
+			Serial.println();
+	*/
+			return false;
+		}
+
+		//If the states of the two pins are the same, we may have a click.
+		if((_state[0] == _state[1]) && _change){
+			_quadChange = !_quadChange;
+			_change = false;
+			if(_direction){
+				_step = 1;			
+			} else {
+				_step = -1;
+			}
+	/*
+			Serial.print("Click:  ");
+			Serial.print(_state[0]);
+			Serial.print("   |   ");
+			Serial.print(_state[1]);
+			Serial.println();
+	*/
+			if(_type == QUAD_STEP){
+				return _quadChange;
+			} else {
+				return true;
+			}
+		}		
 	}
 
 	return false;
@@ -129,7 +168,7 @@ void Encoder::exec(){
 }
 
 //Debounce the reading. Protected function, cannot be called by user.
-void Encoder::_debounce(int pin){
+bool Encoder::_debounce(int pin){
 
 	//Store the last read, get a new one.
 	_prev[pin] = _now[pin];
@@ -139,7 +178,7 @@ void Encoder::_debounce(int pin){
 	//If different, set the debounce time to zero.
 	if(_now[pin] != _prev[pin]){
 		_time[pin] = millis();
-		return;
+		return false;
 	}
 
 	//If state has changed AND debounce time is elapsed, update last state of both pin, and update the state of the current one.
@@ -147,6 +186,10 @@ void Encoder::_debounce(int pin){
 		_pState[0] = _state[0];
 		_pState[1] = _state[1];
 		_state[pin] = _now[pin];
+
+		return true;
 	}
+
+	return false;
 }
 
