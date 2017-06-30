@@ -33,47 +33,46 @@ public:
 
 	Encoder();
 
-	void begin(int pin1, int pin2, coderType_t = SINGLE_STEP);
+	void begin(uint8_t pin1, uint8_t pin2, coderType_t = SINGLE_STEP);
 
 	void setCoderType(coderType_t type);
-	void setDebounceDelay(int delay);
+	void setDebounceDelay(uint16_t delay);
 
 	bool update();
 	
-	char getStep();
+	int8_t getStep();
 
 	void reverse();
 
-	void attach(void *function(char));
+	void attach(void *function(int8_t));
 	void detach();
 
 	void exec();
 
 protected:
 
-	bool _debounce(int pin);
+	bool _debounce(uint8_t pin);
 
-	void (*_function)(char);
+	void (*_function)(int8_t);
 
 	bool _invert;
 	coderType_t _type;
 
-	int _pin[2];
+	uint8_t _pin[2];
 
 	bool _state[2];
 	bool _pState[2];
 	bool _now[2];
 	bool _prev[2];
 
-	long _time[2];
-	long _prevTime[2];
+	uint16_t _time[2];
 
 	bool _direction;
 	bool _change;
 	bool _quadChange;
-	char _step;
+	int8_t _step;
 
-	int _debounceDelay;
+	uint16_t _debounceDelay;
 
 };
 

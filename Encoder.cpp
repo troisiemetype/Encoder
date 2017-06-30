@@ -18,9 +18,30 @@
 
 /*
  * This library is intended to be used to read rotary encoders. There are several types of rotary encoder.
- * This library has been written for those which stop on each click with both pins at high or low state,
- * alternatively. It could be used with those which always stop on each click at the same state. In this case
- * it may lead to two steps per click.
+ * You can choose the appropriate one by using the coderType_t enum values
+ * SINGLE_STEP is for encoder with one step per click, or non clicked encoders.
+ * DOUBLE_STEP is for encoders with two steps per click.
+ * QUAD_STEP is for encoders with four teps per click.
+ *
+ * Start by calling begin with the two pins of the encoder, and optionnaly the encoder type.
+ * If not specified, it will default to SINGLE_STEP.
+ *
+ * Set the debounce delay, or leave it with the default value of 1 millisecond.
+ *
+ * By calling reverse(), you will reverse the reading direction for every read.
+ * Call it again if you want to come back to previous setting.
+ *
+ * Call update() as ogten as posible in your program (typically once per loop).
+ * update() will return true if the encoder has been moved.
+ *
+ * Then call getStep(), that will return the value of the step, positive or negative.
+ *
+ * With attach(function), you can link any function to the encoder.
+ * That function must take a char or int8_t as parameter, and return nothing (void).
+ * Then instead of calling getStep(), you can call exec(),
+ * that will automaticely pass the step to your function.
+ *
+ * Use detach() to free the encoder from your function.
  */
 
 
@@ -41,7 +62,7 @@ Encoder::Encoder(){
 }
 
 //Define the two pins used to connect the encoder
-void Encoder::begin(int pin1, int pin2, Encoder::coderType_t type){
+void Encoder::begin(uint8_t pin1, uint8_t pin2, Encoder::coderType_t type){
 	_pin[0] = pin1;
 	_pin[1] = pin2;
 
@@ -57,13 +78,14 @@ void Encoder::setCoderType(Encoder::coderType_t type){
 }
 
 //Set the debounce delay
-void Encoder::setDebounceDelay(int delay){
+void Encoder::setDebounceDelay(uint16_t delay){
 	_debounceDelay = delay;
 }
 
 //Update the reading of digital pins. Has to be called as often as possible.
 //Returns true if a step has happened.
 bool Encoder::update(){
+	bool step = 0;
 
 	//Decode steps according to encoder type:
 	//SINGLE_STEP is an encoder where each click is a single pin change
@@ -77,7 +99,7 @@ bool Encoder::update(){
 			} else {
 				_step = -1;
 			}
-			return true;
+			step = true;
 
 		} else if(_debounce(1)){
 			if(_state[0] ^_state[1]){
@@ -85,10 +107,10 @@ bool Encoder::update(){
 			} else {
 				_step = 1;
 			}
-			return true;
+			step = true;
 		}
 
-		return false;
+		step = false;
 
 	} else {
 		_debounce(0);
@@ -104,7 +126,7 @@ bool Encoder::update(){
 			Serial.print(_state[1]);
 			Serial.println();
 	*/
-			return false;
+	//		step = false;
 		}
 
 		//If the states of the two pins are the same, we may have a click.
@@ -124,22 +146,22 @@ bool Encoder::update(){
 			Serial.println();
 	*/
 			if(_type == QUAD_STEP){
-				return _quadChange;
+				step = _quadChange;
 			} else {
-				return true;
+				step = true;
 			}
 		}		
 	}
 
-	return false;
+	return step;
 
 }
 
 //Get a reading after polling. Set back to zero once read.
 //exec() uses this function, so be carreful: calling exec() after having calling this
 //Will result in the function called with 0 as paramater.
-char Encoder::getStep(){
-	char state = _step;
+int8_t Encoder::getStep(){
+	int8_t state = _step;
 	_step = 0;
 	return state;
 }
@@ -151,7 +173,7 @@ void Encoder::reverse(){
 
 //Attach an external function to the encoder.
 //The function should have a char as parameter, so the encoder will send it's value.
-void Encoder::attach(void *function(char)){
+void Encoder::attach(void *function(int8_t)){
 	_function = function;
 }
 
@@ -168,7 +190,7 @@ void Encoder::exec(){
 }
 
 //Debounce the reading. Protected function, cannot be called by user.
-bool Encoder::_debounce(int pin){
+bool Encoder::_debounce(uint8_t pin){
 
 	//Store the last read, get a new one.
 	_prev[pin] = _now[pin];
