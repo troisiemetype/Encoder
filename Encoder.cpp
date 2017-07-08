@@ -26,7 +26,7 @@
  * Start by calling begin with the two pins of the encoder, and optionnaly the encoder type.
  * If not specified, it will default to SINGLE_STEP.
  *
- * Set the debounce delay, or leave it with the default value of 1 millisecond.
+ * Set the debounce delay, or leave it with the default value of 200 microseconds.
  *
  * By calling reverse(), you will reverse the reading direction for every read.
  * Call it again if you want to come back to previous setting.
@@ -51,11 +51,11 @@
 Encoder::Encoder(){
 	_invert = false;
 
-	_debounceDelay = 1;
+	_debounceDelay = 200;
 
 	_change = false;
 
-	_time[0] = _time[1] = millis();
+	_time[0] = _time[1] = micros();
 
 	_function = NULL;
 
@@ -77,7 +77,7 @@ void Encoder::setCoderType(Encoder::coderType_t type){
 	_type = type;
 }
 
-//Set the debounce delay
+//Set the debounce delay, microseconds
 void Encoder::setDebounceDelay(uint16_t delay){
 	_debounceDelay = delay;
 }
@@ -199,12 +199,12 @@ bool Encoder::_debounce(uint8_t pin){
 
 	//If different, set the debounce time to zero.
 	if(_now[pin] != _prev[pin]){
-		_time[pin] = millis();
+		_time[pin] = micros();
 		return false;
 	}
 
 	//If state has changed AND debounce time is elapsed, update last state of both pin, and update the state of the current one.
-	if((_state[pin] != _now[pin]) && ((millis() - _time[pin]) > _debounceDelay)){
+	if((_state[pin] != _now[pin]) && ((micros() - _time[pin]) > _debounceDelay)){
 		_pState[0] = _state[0];
 		_pState[1] = _state[1];
 		_state[pin] = _now[pin];
